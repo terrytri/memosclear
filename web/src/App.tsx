@@ -1,11 +1,12 @@
 import { useColorScheme } from "@mui/joy";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router-dom";
 import { getSystemColorScheme } from "./helpers/utils";
 import useNavigateTo from "./hooks/useNavigateTo";
 import { userStore, workspaceStore } from "./store/v2";
+import DustEffect from "./DustEffect"; // 导入灰尘效果组件
 
 const App = observer(() => {
   const { i18n } = useTranslation();
@@ -14,6 +15,20 @@ const App = observer(() => {
   const workspaceProfile = workspaceStore.state.profile;
   const userSetting = userStore.state.userSetting;
   const workspaceGeneralSetting = workspaceStore.state.generalSetting;
+  const [isDustCleared, setIsDustCleared] = useState(false); // 控制灰尘效果显示
+  const [isMobile, setIsMobile] = useState(false); // 判断是否为移动端
+
+  // 检测是否为移动端设备
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    // 检查是否为移动端设备
+    if (/android|iPad|iPhone|iPod|mobile|tablet|touch/.test(userAgent.toLowerCase())) {
+      setIsMobile(true);
+    } else {
+      setIsMobile(false);
+      setIsDustCleared(true); // 桌面端直接跳过灰尘效果
+    }
+  }, []);
 
   // Redirect to sign up page if no instance owner.
   useEffect(() => {
@@ -104,7 +119,32 @@ const App = observer(() => {
     });
   }, [userSetting?.locale, userSetting?.appearance]);
 
-  return <Outlet />;
+  //return <Outlet />;
+  // return (
+  //   <div>
+  //     {!isDustCleared && <DustEffect onComplete={() => setIsDustCleared(true)} />}
+  //     <div style={{ display: isDustCleared ? "block" : "none" }}>
+  //       <Outlet />
+  //     </div>
+  //   </div>
+  // );
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100vh" }}>
+      {/* 主界面内容始终渲染 */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1 }}>
+        <Outlet />
+      </div>
+      {/* 灰尘效果覆盖在主界面之上 */}
+      {isMobile && !isDustCleared && (
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 9999 }}>
+          <DustEffect onComplete={() => setIsDustCleared(true)} />
+        </div>
+      )}
+    </div>
+  );
+
+
 });
 
 export default App;
